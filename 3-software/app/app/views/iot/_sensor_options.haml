@@ -1,0 +1,22 @@
+#sensor-options.ui.longer.modal
+  .header Sensor Options
+  .content
+    .ui.message
+      Specify which sensors you'd like to stream. 
+    %form.ui.form
+      .field
+        .ui.checkbox
+          %input{type:"checkbox", activate: "PRESSURE_ON", deactivate: "PRESSURE_ON", read: "air-read"} 
+          %label Pressure
+    %br    
+   
+      
+      
+  .actions
+    .ui.buttons
+      .ui.cancel.button Cancel
+      .ui.approve.button.green 
+        %i.icon.save
+        Save
+
+    

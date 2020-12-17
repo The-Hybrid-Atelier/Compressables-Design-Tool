@@ -1,0 +1,21 @@
+!!!
+%html.iot
+  %head
+    %meta{:content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type"}/
+    %meta{name: "viewport", content:"width=device-width"}
+    %title IoTInterface
+    = stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true
+    = stylesheet_link_tag    params[:controller], media: 'all', 'data-turbolinks-track' => true
+    = javascript_include_tag 'application', 'data-turbolinks-track' => true
+    = javascript_include_tag params[:controller], 'data-turbolinks-track' => true
+    = csrf_meta_tags
+  %body.iot
+    .ui.attached.top.inverted.segment.socket-state#control-panel
+      .ui.header.inverted.page-header.uppercase
+        Compressables
+        %button.ui.button.icon.circular.tiny.blue.right.floated.editor-toggle
+          %i.ui.icon.eye
+        .sub.header#url
+    #editor.editor
+    .ui.container
+      = yield
