@@ -8,7 +8,21 @@
 //= require audio-effects
 //= require event-logger
 //= require slider
-
+window.api_handler = (event)->
+  if command = $(this).data("command")
+    message = 
+      api: 
+        command: command 
+        params: {}
+    if params = $(this).parents('.api').find('.param')
+      _.each params, (p)->
+        pI = parseInt($(p).val())
+        if not _.isNaN(pI)
+          message.api.params[$(p).attr('name')] = pI
+        else
+          message.api.params[$(p).attr('name')] = $(p).val()
+    if not _.isUndefined window.socket
+      window.socket.jsend(message)
 fullscreen_toggle = ()->
   $('.fullscreen-toggle').click (event)->
     startFullscreen = not $(".fullscreen-mode").hasClass('active')
@@ -158,21 +172,7 @@ window.start_socket = (host, port)->
     else
       alertify.error("Lost connection to server (State="+this.readyState+"). Refresh?")
 
-  $("button.api").click (event)->
-    if command = $(this).data("command")
-      message = 
-        api: 
-          command: command 
-          params: {}
-      if params = $(this).parents('.api').find('.param')
-        _.each params, (p)->
-          pI = parseInt($(p).val())
-          if not _.isNaN(pI)
-            message.api.params[$(p).attr('name')] = pI
-          else
-            message.api.params[$(p).attr('name')] = $(p).val()
-
-      socket.jsend(message)
+  $("button.api").click api_handler
       
       
   return socket

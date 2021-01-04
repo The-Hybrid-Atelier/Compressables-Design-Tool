@@ -50,6 +50,7 @@ slider{
 	border-top-left-radius: 5px;
     border-top-right-radius: 5px;
     position: relative;
+    overflow: hidden;
     island{
 	    border-top-left-radius: 5px;
 	    border-top-right-radius: 5px;
@@ -60,6 +61,14 @@ slider{
     	height: 90%;
     	width: 100%;
     	bottom: 0;
+    }
+    &.pressure island.target{
+    	background: #00A8E1 !important;
+    }
+    island.observed{
+    	background: none !important;
+    	border-top: 3px solid blue !important;
+    	pointer-events: none;
     }
 }
 .inverted .event-logger{
@@ -167,7 +176,7 @@ slider{
 }
 .gap{
 	width: 20px;
-	height: 20px;
+	height: 10px;
 	display:block;
 }
 
