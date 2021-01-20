@@ -152,6 +152,9 @@ window.start_socket = (host, port)->
       console.log "event", stream.event
       $(document).trigger(stream.event, stream)
       $(document).trigger("event", stream)
+    else if stream.api
+      console.log "api", stream.api
+      $(document).trigger(stream.api.command, stream.api)
     else
       console.log("Client << ", event.data)
       editor.session.insert({row: 1, col:0}, "\nClient << "+ JSON.stringify(stream)+"")
