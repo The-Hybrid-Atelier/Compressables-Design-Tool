@@ -9,6 +9,7 @@ Rails.application.routes.draw do
     get 'compressables'
     get 'meter'
     get 'video'
+    get 'design'
   end
   root "iot#compressables"
   

@@ -149,6 +149,7 @@
       console.log "✓ Paperjs Functionality"
       this.name = "siloseam_design"
       @setup(ops)
+      @hello()
 
     setup: (ops)->
       canvas = ops.canvas[0]
@@ -163,6 +164,8 @@
       $(canvas)
         .attr('width', ops.canvas.parent().width())
         .attr('height', ops.canvas.parent().height())
+    hello: ()->
+      
     clear: ->
       paper.project.clear()
 
