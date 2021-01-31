@@ -72,7 +72,6 @@
           if cb
             distance = direction * distance
             cb.next_setpoint = distance
-            console.log "D", distance
             $('#send').addClass("enabled")
           else
             $('#send').addClass("disabled")
@@ -91,8 +90,7 @@
           #   fontSize: 15
           #   position: @path.getPointAt(@path.length/2).add(new paper.Point(50 * @fat_direction, 0))
         
-        onMouseUp: (event)->
-          console.log "up"
+
 
 
       paper.view.update()

@@ -92,8 +92,6 @@ class window.Compressable
             @_next_setpoint = @_lower_limit - @_setpoint
             mined = true
 
-          # -5, 2, 218
-          console.log "NSP", parseInt(value), @_next_setpoint, setpoint, @_setpoint
           if @_next_setpoint != 0
             prefix = if parseInt(@_next_setpoint) > 0 then "+ " else ""
             display = "(" + prefix + @_next_setpoint.toFixed(0) + ")"
