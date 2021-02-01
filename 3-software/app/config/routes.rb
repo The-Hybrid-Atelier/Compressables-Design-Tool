@@ -9,13 +9,10 @@ Rails.application.routes.draw do
     get 'compressables'
     get 'meter'
     get 'video'
-<<<<<<< HEAD
     get 'gesture'
-=======
     get 'design'
->>>>>>> c9ec9c976a77aedd0c43d1245d11f64f682d4560
   end
-  root "iot#compressables"
+  root "iot#design"
   
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
