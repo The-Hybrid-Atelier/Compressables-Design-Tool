@@ -57,7 +57,7 @@ EventMachine.run do
   # START JSON WEBSOCKET SERVER
   websockets = {}
 
-  EM::WebSocket.start(:host => options[:b], :port => options[:p], :debug => true) do |ws|
+  EM::WebSocket.start(:host => "0.0.0.0", :port => options[:p], :debug => false) do |ws|
     ws.onopen do |handshake|
       ws.name = ws.remote_ip()
       websockets[ws.signature] = ws
@@ -111,7 +111,8 @@ EventMachine.run do
     end
   end
 
-  ip = Socket::getaddrinfo(Socket.gethostname,"echo",Socket::AF_INET)[0][3]
+  # ip = Socket::getaddrinfo(Socket.gethostname,"echo",Socket::AF_INET)[0][3]
+  ip = "192.168.1.4"
   puts "Server: Started at ws://#{options[:b]}:#{options[:p]} --> #{ip}"
   print "#{websockets.length} Devices Connected\n"
 end
