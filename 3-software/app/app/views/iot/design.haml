@@ -14,6 +14,7 @@
     @FONT: "Arial"
     @SCALE: 0.05
     @LIMITS_OFFSET: 40
+    @GESTURE_TIME: 10
     constructor: (ops)->
       console.log "✓ Paperjs Functionality"
       this.name = "gesture"
@@ -38,6 +39,7 @@
 
     setup: (ops)->
       scope = this
+      $("label.temporal").html("Draw a "+GestureCanvas.GESTURE_TIME+" second wave.")
       canvas = ops.canvas[0]
       $(canvas)
         .attr('width', ops.canvas.parent().width())
@@ -58,9 +60,9 @@
           paper.project.clear()
           
 
-          @time_lines = _.range(0, 5.25, 0.25) #250 ms increments
+          @time_lines = _.range(0, GestureCanvas.GESTURE_TIME+0.25, 0.25) #250 ms increments
           @time_lines = _.map @time_lines, (t, i)->
-            p = t / 5
+            p = t / GestureCanvas.GESTURE_TIME
             top = paper.view.bounds.topLeft.add(new paper.Point(GestureCanvas.LIMITS_OFFSET, 0))
             bottom = paper.view.bounds.bottomLeft.add(new paper.Point(GestureCanvas.LIMITS_OFFSET, 0))
             right = paper.view.bounds.topRight.add(new paper.Point(-1 * GestureCanvas.LIMITS_OFFSET, 0))
@@ -101,7 +103,7 @@
             strokeColor: "#00A8E1"
             strokeWidth: 2
             to: (t)->
-              t = t / 1000 / 5
+              t = t / 1000 / GestureCanvas.GESTURE_TIME
               pt = scope.mid.getPointAt(t * scope.mid.length)
               this.position.x = pt.x
               paper.view.update()
