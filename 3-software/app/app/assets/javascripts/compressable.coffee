@@ -19,7 +19,13 @@ class window.Compressable
       console.log ">>", msg
       if @socket
         @socket.send msg
-   
+
+    to_p: (pressure)->
+      range = @upper_limit - @lower_limit
+      return (pressure - @lower_limit) / range
+    to_pressure: (p)->
+      range = @upper_limit - @lower_limit
+      return @lower_limit + (p * range)
 
     Object.defineProperties @prototype, 
       name:
@@ -27,6 +33,7 @@ class window.Compressable
         set: (value)-> 
           @_name = value
           console.log "Loading", @_name
+
       setpoint:
         get: -> @_setpoint
         set: (value)->
@@ -40,8 +47,11 @@ class window.Compressable
           else
             $('.setpoint').html(@_setpoint.toFixed(0))
           @next_setpoint = 0
-          @send "pid",
-            set_setpoint: @_setpoint
+          if @_status == "STOPPED"
+            return
+          else
+            @send "pid",
+              set_setpoint: @_setpoint
       status:
         get: -> @_status
         set: (state)->
@@ -51,13 +61,15 @@ class window.Compressable
             when "STOPPED"
               $("#controller").addClass("stopped")
               @pre_stop_sp = @_setpoint
-              @send("emergency_stop")
+              @send "pid", 
+                action: "emergency_stop"
               @setpoint = 0
               @next_setpoint = -1
             when "ON"
               $("#controller").removeClass("stopped")
               @setpoint = @pre_stop_sp 
-              @send("restart")
+              @send "pid", 
+                action: "restart"
           $('.status').html(@_status)
       upper_limit: 
         get: -> parseInt(@_upper_limit)

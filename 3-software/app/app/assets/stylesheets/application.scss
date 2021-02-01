@@ -43,6 +43,25 @@ $numericalColor: $green;
   justify-content: center;
   align-items: center;
 }
+
+.ccfe{
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: flex-end;
+  align-items: center;
+}
+.ccfs{
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: flex-start;
+  align-items: center;
+}
+.ccb{
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: space-between;
+  align-items: center;
+}
 .crc{
   display: flex;
   flex-flow: row nowrap;
