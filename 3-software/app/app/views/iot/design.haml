@@ -1,338 +1,14 @@
 :coffeescript
+  # Application Settings
   window.NAME = "interaction-app"
   window.VERSION = "1.0"
-
-  window.emulateReading = ()->
-    $(document).trigger "read-pressure", 
-      data: [cb.setpoint + ((Math.random()*10) - 2.5), cb.setpoint + ((Math.random()*10) - 2.5), cb.setpoint + ((Math.random()*10) - 2.5), cb.setpoint + ((Math.random()*10) - 2.5)]
-  
   window.socket = null
   window.editor = null
   EMULATOR_ON = false
 
-  class GestureCanvas
-    @FAT_FINGER_OFFSET: 80
-    @FONT: "Arial"
-    @SCALE: 0.05 * 10
-    @LIMITS_OFFSET: 40
-    @GESTURE_TIME: 10
-    constructor: (ops)->
-      console.log "✓ Paperjs Functionality"
-      this.name = "gesture"
-      @_layout = "left-handed"
-      @_input = "temporal"
-      @a = null
-      @b = null
-      @c = null
-      @d = null
-      @e = null
-      @setup(ops)
-    command: ()->
-      commands = paper.project.getItems
-        name: "command"
-      if commands.length == 0
-        return 0
-      else
-        if @_input == "instantaneous"
-          return [[0, commands[0].setpoint]]
-        else if @_input == "temporal"
-          return _.zip(commands[0].t, commands[0].setpoints)
-
-    setup: (ops)->
-      scope = this
-      $("label.temporal").html("Draw a "+GestureCanvas.GESTURE_TIME+" second wave.")
-      canvas = ops.canvas[0]
-      $(canvas)
-        .attr('width', ops.canvas.parent().width())
-        .attr('height', ops.canvas.parent().height())
-
-      # $(canvas).css
-        # width: ops.canvas.parent().width()
-        # height: ops.canvas.parent().height()
-      window.paper = new paper.PaperScope
-      loadCustomLibraries()
-      paper.setup canvas
-      paper.view.zoom = 1
-      @temporal = new paper.Tool
-        name: "temporal"
-        init: ()->
-          scope = this
-          console.log "temporal"
-          paper.project.clear()
-          
-
-          @time_lines = _.range(0, GestureCanvas.GESTURE_TIME+0.25, 0.25) #250 ms increments
-          @time_lines = _.map @time_lines, (t, i)->
-            p = t / GestureCanvas.GESTURE_TIME
-            top = paper.view.bounds.topLeft.add(new paper.Point(GestureCanvas.LIMITS_OFFSET, 0))
-            bottom = paper.view.bounds.bottomLeft.add(new paper.Point(GestureCanvas.LIMITS_OFFSET, 0))
-            right = paper.view.bounds.topRight.add(new paper.Point(-1 * GestureCanvas.LIMITS_OFFSET, 0))
-            range = right.subtract(top)
-            range = range.length
-            major = if i%4 == 0 then false else true
-            return new paper.Path.Line
-              name: "time_lines"
-              t: t
-              from: new paper.Point(GestureCanvas.LIMITS_OFFSET + (range * p), top.y + GestureCanvas.LIMITS_OFFSET)
-              to: new paper.Point(GestureCanvas.LIMITS_OFFSET + (range * p), bottom.y - GestureCanvas.LIMITS_OFFSET)
-              strokeColor: if major then new paper.Color(0.8) else new paper.Color(0.1)
-              strokeWidth: 1
-              dashArray: if major then [1, 1] else []
-          @upper = new paper.Path.Line
-            name: 'upper'
-            from: paper.view.bounds.topLeft.add(new paper.Point(0, GestureCanvas.LIMITS_OFFSET))
-            to: paper.view.bounds.topRight.add(new paper.Point(0, GestureCanvas.LIMITS_OFFSET))
-            strokeColor: "green"
-            strokeWidth: 1
-          @mid = new paper.Path.Line
-            name: 'mid'
-            from: paper.view.bounds.leftCenter.add(new paper.Point(GestureCanvas.LIMITS_OFFSET, 0))
-            to: paper.view.bounds.rightCenter.add(new paper.Point(-GestureCanvas.LIMITS_OFFSET, 0))
-            strokeColor: "green"
-            strokeWidth: 1
-            dashArray: [1,1]
-          @lower = new paper.Path.Line
-            name: 'lower'
-            from: paper.view.bounds.bottomLeft.add(new paper.Point(0, -GestureCanvas.LIMITS_OFFSET))
-            to: paper.view.bounds.bottomRight.add(new paper.Point(0, -GestureCanvas.LIMITS_OFFSET))
-            strokeColor: "green"
-            strokeWidth: 1
-          @scrubber = @time_lines[0].clone()
-          
-          @scrubber.set
-            name: "scrubber"
-            strokeColor: "#00A8E1"
-            strokeWidth: 2
-            to: (t)->
-              t = t / 1000 / GestureCanvas.GESTURE_TIME
-              pt = scope.mid.getPointAt(t * scope.mid.length)
-              this.position.x = pt.x
-              paper.view.update()
-            addPoint: (l)->
-              p = cb.to_p(cb.pressure)
-              p = if p > 1 then 1 else p
-              p = if p < 0 then 0 else p
-              p = 1 - p
-              l.addSegment(this.getPointAt(this.length * p))
-              l.smooth()
-              paper.view.update()
-
-          p = cb.to_p(cb.setpoint)
-          left = new paper.Path.Line
-            to: @upper.firstSegment.point
-            from: @lower.firstSegment.point
-          right = new paper.Path.Line
-            to: @upper.lastSegment.point
-            from: @lower.lastSegment.point
-
-          @setline = new paper.Path.Line
-            name: 'setline'
-            from: left.getPointAt(left.length * (p))
-            to: right.getPointAt(right.length * (p))
-            strokeColor: "blue"
-            strokeWidth: 3
-            dashArray: [1,1]
-
-          left.remove()
-          right.remove()
-
-          paper.view.update()
-        bound_check_x: (x)->
-          if x < @path.lastSegment.point.x
-            return @path.lastSegment.point.x
-          else
-            return x
-        bound_check_y: (y)->
-          if y < @upper.firstSegment.point.y
-            return @upper.firstSegment.point.y
-          else if y > @lower.firstSegment.point.y
-            return @lower.firstSegment.point.y
-          else
-            return y
-        onMouseDown: (event)->
-          @init()
-          @path = new paper.Path
-            name: "wave"
-            strokeColor: "green"
-            strokeWidth: 4
-            segments: [event.point]
-        onMouseDrag: (event)->
-          pt = event.point
-          pt.x = @bound_check_x(pt.x)
-          pt.y = @bound_check_y(pt.y) 
-          @path.addSegment(pt)
-          # @path.simplify()
-        onMouseUp: (event)->
-          scope = this
-          pt = event.point
-          pt.x = @bound_check_x(pt.x)
-          pt.y = @bound_check_y(pt.y)
-          @path.addSegment(pt)
-          last_pt = null
-          segments = _.map @time_lines, (tl)->
-              ixts = scope.path.getIntersections(tl)
-              if ixts.length > 0
-                ixt = ixts[ixts.length - 1]
-                last_pt = ixt.point.clone()
-                info = 
-                  segment: ixt.point
-                  p: 1 - (tl.getNearestLocation(ixt.point).offset / tl.length)
-                  t: tl.t
-              else if last_pt
-                last_pt.x = tl.firstSegment.point.x
-                info =  
-                  segment: last_pt
-                  p: 1 - (tl.getNearestLocation(last_pt).offset / tl.length)
-                  t: tl.t
-              else
-                p = 1 - cb.to_p(cb.setpoint)
-                info =  
-                  segment:  tl.getPointAt(p * tl.length)
-                  p: 1 - p
-                  t: tl.t
-              return info
-
-          segments = _.compact segments
-          
-        
-          @path2 = new paper.Path
-            name: "command"
-            strokeColor: "#5CCA5B"
-            strokeWidth: 4
-            t: _.map segments, (v)-> v["t"] * 1000 #milliseconds
-            p: _.pluck segments, "p"
-            setpoints: _.map segments, (v)-> parseInt(cb.to_pressure(v["p"]))
-            segments: _.pluck segments, "segment"
-
-          @path.remove()
-
-
-
-      @instantaneous = new paper.Tool
-        name: "instantaneous"
-        init: ()->
-          console.log "instantaneous"
-          paper.project.clear()
-          paper.view.update()
-          
-        onMouseDown: (event)->
-          paper.project.clear()
-          @scrubber = new paper.Path.Line
-            name: "scrubber"
-          @scrubber.to = (t)->
-            # console.log ("INST")
-            paper.view.update()
-          @scrubber.addPoint = (l)->
-            paper.view.update()
-
-          @mdpt = event.point
-          fat_finger_pt = event.point.clone()
-          l = paper.project.view.bounds.topLeft.x
-          r = paper.project.view.bounds.topRight.x
-          @fat_direction = if l - event.point.x > event.point.x - r then 1 else -1
-          fat_finger_pt.x += GestureCanvas.FAT_FINGER_OFFSET * @fat_direction
-          @path = new paper.Path
-            name: "command"
-            segments: [fat_finger_pt, fat_finger_pt.clone()]
-            strokeWidth: 4
-            strokeColor: "#5CCA5B"
-        onMouseDrag: (event)->
-          if not event.point.isInside(paper.view.bounds.expand(-15))
-            return
-          @path.lastSegment.point.y = event.point.y
-          # Cleanup
-          if @head then @head.remove()
-          if @label then @label.remove()
-          # Arrowhead Construction
-          head_pt = event.point.clone()
-          head_pt.x =  @path.lastSegment.point.x
-          direction =  if @path.lastSegment.point.getDirectedAngle(@path.firstSegment.point) > 0 then 1 else -1
-          @head = new paper.Path
-            segments: [head_pt.add(new paper.Point(-10, direction * 20)), head_pt, head_pt.add(new paper.Point(10, direction * 20))]
-          @head.style = @path.style
-          # Labeling
-          dir_label = if direction > 0 then "+ " else ""
-          distance = @path.length * GestureCanvas.SCALE
-          label = "error"
-          if cb
-            distance = direction * distance
-            cb.next_setpoint = distance
-            @path.setpoint = cb.next_setpoint + cb.setpoint
-            $('#send').addClass("enabled")
-          else
-            $('#send').addClass("disabled")
-
-
-          # l = paper.project.view.bounds.topLeft.x
-          # r = paper.project.view.bounds.topRight.x
-          # x = @path.firstSegment.point.x
-          
-
-          # @label = new paper.PointText
-          #   content: label
-          #   fillColor: 'black'
-          #   fontFamily: GestureCanvas.FONT
-          #   fontWeight: 'bold'
-          #   fontSize: 15
-          #   position: @path.getPointAt(@path.length/2).add(new paper.Point(50 * @fat_direction, 0))
-        
-
-
-
-      paper.view.update()
-    save: (loc, value)-> 
-      value = paper.project.getItem({name: "command"})
-      this[loc] = value
-      $("[action='save'][save_id='"+loc+"']").html("X").addClass("blue")
-      @a = value
-    load: (loc)->
-      command = paper.project.getItem({name: "command"})
-      if this[loc]
-        if command then command.remove()
-        paper.project.activeLayer.addChild this[loc]
-        paper.view.update()
-    clear_save: (loc)->
-      $("[action='save'][save_id='"+loc+"']").html(loc.toUpperCase()).removeClass("blue")
-      this[loc] = null
-    clear: ->
-      paper.project.clear()
-      paper.view.update()
-    Object.defineProperties @prototype, 
-      
-      layout:
-        get: -> @_layout
-        set: (value)-> 
-          if value == @_layout then return
-          @_layout = value
-          switch value 
-            when "left-handed"
-              $(".state").remove().appendTo($("#input"))
-              $('#controller').removeClass("right-handed")
-              $('#controller').addClass("left-handed")
-              $('[action="hand-toggle"]').html("CHANGE TO RIGHT-HAND")
-            when "right-handed"
-              $(".state").remove().prependTo($("#input"))
-              $('#controller').addClass("right-handed")
-              $('#controller').removeClass("left-handed")
-              $('[action="hand-toggle"]').html("CHANGE TO LEFT-HAND")
-      input: 
-        get: -> @_input
-        set: (value)->
-          if value == @_layout then return
-          @_input = value
-          
-          $('#input').attr("mode", value)
-          switch @_input
-            when "temporal"
-              paper.tool = @temporal
-              paper.tool.init()
-              $('[action="input-toggle"]').html("SWITCH TO INSTANTANEOUS MODE")
-            when "instantaneous"
-              paper.tool = @instantaneous
-              paper.tool.init()
-              $('[action="input-toggle"]').html("SWITCH TO TEMPORAL MODE")
-          
-
+  window.emulateReading = ()->
+    $(document).trigger "read-pressure", 
+      data: [cb.setpoint + ((Math.random()*10) - 2.5), cb.setpoint + ((Math.random()*10) - 2.5), cb.setpoint + ((Math.random()*10) - 2.5), cb.setpoint + ((Math.random()*10) - 2.5)]
           
   $ -> 
     console.log "Interaction Design App Initialized"
@@ -352,37 +28,45 @@
       window.cb.status = "STOPPED"; 
       window.cb.next_setpoint = 0;
       gc.clear()
+    
     # Limit Settings
     $('[action="set_ul"]').on "taphold", (event)-> window.cb.upper_limit = "–"; 
     $('[action="set_ll"]').on "taphold", (event)-> window.cb.lower_limit = "–"; 
-    $('[action="set_ul"]').click ()-> window.cb.upper_limit = window.cb.pressure; 
-    $('[action="set_ll"]').click ()-> window.cb.lower_limit = window.cb.pressure; 
+    $('[action="set_ul"]').click ()-> window.cb.upper_limit = window.cb.setpoint; 
+    $('[action="set_ll"]').click ()-> window.cb.lower_limit = window.cb.setpoint; 
     $('[action="hand-toggle"]').click ()-> window.gc.layout = if window.gc.layout == "right-handed" then "left-handed" else "right-handed"; 
     $('[action="input-toggle"]').click ()-> window.gc.input = if window.gc.input == "instantaneous" then "temporal" else "instantaneous"; 
     $('[action="save"]').click ()-> gc.load($(this).attr("save_id"));
     $('[action="save"]').on "taphold", ()-> gc.save($(this).attr("save_id"));
     $('[action="save"]').on "swiperight", ()-> gc.clear_save($(this).attr("save_id"));
+    
     $('#send').click ()-> 
       commands = gc.command()
       scrubber = paper.project.getItem
         name: "scrubber"
       if not scrubber then return
 
-      live = paper.project.getItem
-        name: "live"
-      if live
-        live.remove()
-      live = new paper.Path
-        name: "live"
-        strokeColor: "blue"
-        strokeWidth: 2
+      # live = paper.project.getItem
+      #   name: "live"
+      # if live
+      #   live.remove()
+      # live = new paper.Path
+      #   name: "live"
+      #   strokeColor: "blue"
+      #   strokeWidth: 2
 
 
       _.each commands, (c)->
         # console.log "Sending", c[1], c[0]
-        _.delay (()-> scrubber.to(c[0]); scrubber.addPoint(live); window.cb.setpoint = c[1]), c[0]
+        _.delay (()-> scrubber.to(c[0]); window.cb.setpoint = c[1]), c[0]
+        # _.delay (()-> scrubber.to(c[0]); scrubber.addPoint(live); window.cb.setpoint = c[1]), c[0]
       
     # Live pressure readings
+    $(document).on "behavior", (event, msg)-> 
+      console.log "Calling behavior", msg["index"].toLowerCase()
+      if msg["index"]
+        gc.load(msg["index"].toLowerCase())
+        $('#send').click()
     $(document).on "read-pressure", (event, msg)-> 
       sum = _.reduce(data = msg.data, ((x, memo)-> memo = memo + x), 0 )
       window.cb.pressure = sum / msg.data.length # average value of data packet
@@ -394,8 +78,8 @@
     cb.status = "ON"
     cb.upper_limit = 100
     cb.lower_limit = -100
-    cb.setpoint = 50
-    cb.next_setpoint = 0
+    cb.setpoint = 49
+    cb.next_setpoint = 1
     cb.pressure = 123
     gc.input = "instantaneous"
 
@@ -411,7 +95,9 @@
             %label HAWS LOCAL
             .ui.labeled.input
               .ui.label ws://   
-              %input.param{type:"text", name:"host", value:"192.168.1.4"}
+              - if false
+                %input.param{type:"text", name:"host", value:"192.168.1.4"}
+              %input.param{type:"text", name:"host", value:"162.243.120.86"}
             %label PORT
             %input.param{type:"number", name:"port", value: 3001}
           .field
@@ -427,7 +113,8 @@
           .ui.button.black.fluid.massive{action: "save", save_id: 'c'} C
           .ui.button.black.fluid.massive{action: "save", save_id: 'd'} D
           .ui.button.black.fluid.massive{action: "save", save_id: 'e'} E
-      .ui.button.fluid.large.purple{action: "pid_toggle"} HOLD
+      -if false
+        .ui.button.fluid.large.purple{action: "pid_toggle"} HOLD
       .ui.button.fluid.large.purple{action: "hand-toggle"} CHANGE TO RIGHT-HAND
       .ui.button.fluid.large.blue{action: "input-toggle"} CHANGE TO TIME INPUT MODE
       .ui.button.badged.massive.yellow{action: "set_ul"}
@@ -445,7 +132,7 @@
           %label.sublabel STATUS
           %label.status ON
         .reading.cc.blue
-          %label.sublabel PWM
+          %label.sublabel POWER
           %label.setpoint 130
           %label.next_setpoint (+3)
         .reading.cc

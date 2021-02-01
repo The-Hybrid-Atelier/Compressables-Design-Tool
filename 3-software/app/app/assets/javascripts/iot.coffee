@@ -9,6 +9,7 @@
 //= require event-logger
 //= require slider
 //= require compressable
+//= require gesture-canvas
 window.api_handler = (event)->
   if command = $(this).data("command")
     message = 

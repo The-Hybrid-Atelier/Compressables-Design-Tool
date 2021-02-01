@@ -42,8 +42,8 @@ process_start = time.time()
 
 # HAWS Metadata
 DEVICE_NAME= "programmable-air"
-# uri = "ws://162.243.120.86:3001"
-uri = "ws://192.168.1.4:3001"
+uri = "ws://162.243.120.86:3001"
+# uri = "ws://192.168.1.4:3001"
 jws = JSONWebSocketClient("pid-controller", uri)
 jws.connect()
 pumpoff = {"api":{"command":"ALL_PUMP_OFF","params":{}}}
@@ -67,6 +67,7 @@ class thread_window_cleaner(threading.Thread):
 		self.pid_thread = thread
 
 	def run(self):
+		print("Connecting to HAWS at %s", uri)
 		jws.connect()
 		print("Turning on pressure readings...")
 		jws.send(pressure_ON)
@@ -146,6 +147,8 @@ class thread_classifer(threading.Thread):
 
 	def emergency_stop(self):
 		self.act(0)
+		pumpoff = {"api":{"command":"ALL_PUMP_OFF","params":{}}}
+		jws.send(pumpoff)
 		self.state = "vent"
 		vent = {"api":{"command":"VENT","params":{}}}
 		jws.send(vent)
@@ -168,24 +171,28 @@ class thread_classifer(threading.Thread):
 				blow = {"api":{"command":"BLOW","params":{}}}
 				jws.send(blow)
 				self.state = "blow"
+				jws.send({"api":{"command":"PUMP_ON","params":{"pumpNumber":1, "PWM": 0}}})
+			
 
 			# To prevent throttling:
-			if np.abs(self.last_act - pwm) > 3:
-				jws.send({"api":{"command":"PUMP_ON","params":{"pumpNumber":2, "PWM": pwm}}})
-				self.last_act = pwm
+			# if np.abs(self.last_act - pwm) > 1:
+			jws.send({"api":{"command":"PUMP_ON","params":{"pumpNumber":2, "PWM": pwm}}})
+			self.last_act = pwm
 
 			return pwm
-		else:
+		else: 
 			print("SUCK")
 			if self.state != "suck":
 				suck = {"api":{"command":"SUCK","params":{}}}
 				jws.send(suck)
 				self.state = "suck"
+				jws.send({"api":{"command":"PUMP_ON","params":{"pumpNumber":2, "PWM": 0}}})
+			
 
 			# To prevent throttling:
-			if np.abs(self.last_act - pwm) > 3:
-				jws.send({"api":{"command":"PUMP_ON","params":{"pumpNumber":1, "PWM": abs(pwm)}}})
-				self.last_act = pwm
+			# if np.abs(self.last_act - pwm) > 1:
+			jws.send({"api":{"command":"PUMP_ON","params":{"pumpNumber":1, "PWM": abs(pwm)}}})
+			self.last_act = pwm
 		
 			return abs(pwm)
 
@@ -248,8 +255,9 @@ class thread_classifer(threading.Thread):
 
 	def recognize(self):
 		global CURRENT_WINDOW
+		pass
 		# print("recognize", len(CURRENT_WINDOW), np.mean(CURRENT_WINDOW))
-		print(stats.describe(CURRENT_WINDOW))
+		# print(stats.describe(CURRENT_WINDOW))
 
 # RUN THIS CELL TO ACTIVATE PID 
 def has_live_threads(threads):
@@ -283,4 +291,5 @@ def main():
 	print("Exited")
 	
 if __name__ == '__main__':
+	print('Starting controller...')
 	main()
