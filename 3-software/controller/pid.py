@@ -22,8 +22,6 @@ from scipy import stats
 from simple_pid import PID
 from IPython.display import display, clear_output
 
-
-
 # Gesture Tracking Globals
 SCALE = 4
 Kp = 3 * SCALE
