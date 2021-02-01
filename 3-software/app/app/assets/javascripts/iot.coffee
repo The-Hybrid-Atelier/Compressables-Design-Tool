@@ -8,6 +8,7 @@
 //= require audio-effects
 //= require event-logger
 //= require slider
+//= require compressable
 window.api_handler = (event)->
   if command = $(this).data("command")
     message = 
