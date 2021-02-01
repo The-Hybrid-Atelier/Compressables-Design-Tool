@@ -13,7 +13,7 @@
   class GestureCanvas
     @FAT_FINGER_OFFSET: 80
     @FONT: "Arial"
-    @SCALE: 0.05
+    @SCALE: 0.05 * 10
     @LIMITS_OFFSET: 40
     @GESTURE_TIME: 10
     constructor: (ops)->
@@ -392,9 +392,9 @@
 
     # Initial view update; needs to be called whenever state changes.
     cb.status = "ON"
-    cb.upper_limit = 135
-    cb.lower_limit = 121
-    cb.setpoint = 120
+    cb.upper_limit = 100
+    cb.lower_limit = -100
+    cb.setpoint = 50
     cb.next_setpoint = 0
     cb.pressure = 123
     gc.input = "instantaneous"
@@ -421,7 +421,7 @@
   .ui#controller.left-handed.cc.f
     .settings.ccfe
       .ui.crc
-        - if false
+        - if true
           .ui.button.black.fluid.massive{action: "save", save_id: 'a'} A
           .ui.button.black.fluid.massive{action: "save", save_id: 'b'} B
           .ui.button.black.fluid.massive{action: "save", save_id: 'c'} C
@@ -445,7 +445,7 @@
           %label.sublabel STATUS
           %label.status ON
         .reading.cc.blue
-          %label.sublabel SET
+          %label.sublabel PWM
           %label.setpoint 130
           %label.next_setpoint (+3)
         .reading.cc

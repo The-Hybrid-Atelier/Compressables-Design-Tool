@@ -115,6 +115,7 @@ class thread_classifer(threading.Thread):
 		self.pid.output_limits = (20, 100) 
 		self.state = None
 		self.last_act = 0
+		self.pwm = 0
 		self.stopped = False
 		self.pid_stopped = False
 
@@ -123,6 +124,7 @@ class thread_classifer(threading.Thread):
 		if message["action"] == "set_setpoint":
 			print("Changing setpoint to", message["value"])
 			self.pid.setpoint = message["value"]
+			self.pwm = message["value"]
 		if message["action"] == "tunings":
 			self.pid.tunings = tuple(message["value"])
 			print("Changing tunings to", message["value"])
@@ -157,20 +159,35 @@ class thread_classifer(threading.Thread):
 		# pwm += 30
 		if pwm > 100: 
 			pwm = 100
-		elif pwm < 0:
-			pwm = 0
+		elif pwm < -100:
+			pwm = -100
 
-		if self.state != "blow":
-			blow = {"api":{"command":"BLOW","params":{}}}
-			jws.send(blow)
-			self.state = "blow"
+		if pwm > 0: # Blow	
+			print("BLOW")
+			if self.state != "blow":
+				blow = {"api":{"command":"BLOW","params":{}}}
+				jws.send(blow)
+				self.state = "blow"
 
-		# To prevent throttling:
-		if np.abs(self.last_act - pwm) > 5:
-			jws.send({"api":{"command":"PUMP_ON","params":{"pumpNumber":2, "PWM": pwm}}})
-			self.last_act = pwm
+			# To prevent throttling:
+			if np.abs(self.last_act - pwm) > 3:
+				jws.send({"api":{"command":"PUMP_ON","params":{"pumpNumber":2, "PWM": pwm}}})
+				self.last_act = pwm
+
+			return pwm
+		else:
+			print("SUCK")
+			if self.state != "suck":
+				suck = {"api":{"command":"SUCK","params":{}}}
+				jws.send(suck)
+				self.state = "suck"
+
+			# To prevent throttling:
+			if np.abs(self.last_act - pwm) > 3:
+				jws.send({"api":{"command":"PUMP_ON","params":{"pumpNumber":1, "PWM": abs(pwm)}}})
+				self.last_act = pwm
 		
-		return pwm
+			return abs(pwm)
 
 	def run(self):
 		while not self.kill_received:
@@ -181,27 +198,42 @@ class thread_classifer(threading.Thread):
 				count = count + 1
 				print("No sensor values detected... %i"%(count))
 			else:
-				# SAMPLE ENVIRONMENT
-				# self.act(30)
-				# time.sleep(0.1) # allow sensor reading to catch up
-				
+				# PID
+				# if True and not (self.stopped or self.pid_stopped):
+				# 	# process_value = np.mean(CURRENT_WINDOW)
+				# 	process_value = LAST_PRESSURE_READING
+				# 	error = self.pid.setpoint - process_value
+				# 	clear_output(wait=True)
+
+				# 	pwm = self.pid(process_value)
+				# 	# print(process_value, pwm)
+				# 	pwm = self.act(pwm)
+				# 	# print(self.pid.tunings)
+
+				# 	time.sleep(self.step_size)
+				# 	process_value = LAST_PRESSURE_READING
+				# 	display("PID(%i) %2.2f: %2.2f %2.2f --> %2.2f PWM" % (PACKETS_RECEIVED, self.pid.setpoint, process_value, error, pwm))
+				# 	self.log.add(time.time(), self.pid.setpoint, process_value, pwm)	
+				# else:
+				# 	self.classify()
+				# PWM
 				if True and not (self.stopped or self.pid_stopped):
 					# process_value = np.mean(CURRENT_WINDOW)
-					process_value = LAST_PRESSURE_READING
-					error = self.pid.setpoint - process_value
+					# process_value = LAST_PRESSURE_READING
+					# error = self.pid.setpoint - process_value
 					clear_output(wait=True)
-
-					pwm = self.pid(process_value)
+					# pwm = self.pid(process_value)
 					# print(process_value, pwm)
-					pwm = self.act(pwm)
+					pwm = self.act(self.pwm)
 					# print(self.pid.tunings)
-
 					time.sleep(self.step_size)
 					process_value = LAST_PRESSURE_READING
-					display("PID(%i) %2.2f: %2.2f %2.2f --> %2.2f PWM" % (PACKETS_RECEIVED, self.pid.setpoint, process_value, error, pwm))
-					self.log.add(time.time(), self.pid.setpoint, process_value, pwm)	
+					display("PWM(%i) %2.2f --> %2.2f PWM --> %2.2f PWM" % (PACKETS_RECEIVED, process_value, self.pwm, pwm))
+					# self.log.add(time.time(), self.pid.setpoint, process_value, pwm)	
 				else:
 					self.classify()
+
+
 		# self.log.plot()
 			# self.classify()
 
