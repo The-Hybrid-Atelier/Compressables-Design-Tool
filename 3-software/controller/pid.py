@@ -26,7 +26,7 @@ from IPython.display import display, clear_output
 
 # Gesture Tracking Globals
 SCALE = 4
-Kp = 2 * SCALE
+Kp = 3 * SCALE
 Ki = 0.1 * SCALE
 Kd = 0.05 * SCALE
 
@@ -116,6 +116,7 @@ class thread_classifer(threading.Thread):
 		self.state = None
 		self.last_act = 0
 		self.stopped = False
+		self.pid_stopped = False
 
 	def pid_message_handler(self, jws, message):
 		# print("IA: %s %s %s", (message, message["action"], message["value"]))
@@ -129,6 +130,14 @@ class thread_classifer(threading.Thread):
 			self.emergency_stop()
 		if message["action"] == "restart":
 			self.restart()
+		if message["action"] == "pid_stop":
+			print("PID STOPPED")
+			self.pid_stopped = True
+			pid = {"event": "pid-read", "data": [self.last_act]}
+			jws.send(pid)
+		if message["action"] == "pid_start":
+			print("PID STARTED")
+			self.pid_stopped = False
 
 	def restart(self):
 		self.stopped = False
@@ -176,7 +185,7 @@ class thread_classifer(threading.Thread):
 				# self.act(30)
 				# time.sleep(0.1) # allow sensor reading to catch up
 				
-				if True and not self.stopped:
+				if True and not (self.stopped or self.pid_stopped):
 					# process_value = np.mean(CURRENT_WINDOW)
 					process_value = LAST_PRESSURE_READING
 					error = self.pid.setpoint - process_value
@@ -191,6 +200,8 @@ class thread_classifer(threading.Thread):
 					process_value = LAST_PRESSURE_READING
 					display("PID(%i) %2.2f: %2.2f %2.2f --> %2.2f PWM" % (PACKETS_RECEIVED, self.pid.setpoint, process_value, error, pwm))
 					self.log.add(time.time(), self.pid.setpoint, process_value, pwm)	
+				else:
+					self.classify()
 		# self.log.plot()
 			# self.classify()
 
@@ -206,7 +217,7 @@ class thread_classifer(threading.Thread):
 	def recognize(self):
 		global CURRENT_WINDOW
 		# print("recognize", len(CURRENT_WINDOW), np.mean(CURRENT_WINDOW))
-		# print(stats.describe(CURRENT_WINDOW))
+		print(stats.describe(CURRENT_WINDOW))
 
 # RUN THIS CELL TO ACTIVATE PID 
 def has_live_threads(threads):

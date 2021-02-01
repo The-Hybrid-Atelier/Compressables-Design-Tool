@@ -84,7 +84,8 @@ class window.EventLogger
 				p_msg = "\n"+tab+"\""+sender+"("+event+")\" >> "+JSON.stringify(msg)
 
 				# Log to editor
-				editor.session.insert({row: 1, col:0}, p_msg)
+				if editor
+					editor.session.insert({row: 1, col:0}, p_msg)
 				# Log to UI
 				entry = $("<span class='event'>").html(event).hide()
 				$(".event-logger").prepend(entry)

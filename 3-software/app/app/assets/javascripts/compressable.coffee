@@ -14,12 +14,9 @@ class window.Compressable
       msg = {}
       if event
         msg.event = event
-      if parameters
-        msg.params = parameters
-      console.log ">>", msg
-      if @socket
-        @socket.send msg
-
+      msg = _.extend msg, parameters
+      if window.socket
+        window.socket.jsend msg
     to_p: (pressure)->
       range = @upper_limit - @lower_limit
       return (pressure - @lower_limit) / range
@@ -51,12 +48,14 @@ class window.Compressable
             return
           else
             @send "pid",
-              set_setpoint: @_setpoint
+              action: "set_setpoint"
+              value: @_setpoint
       status:
         get: -> @_status
         set: (state)->
           if @_status == state then return
           @_status = state
+        
           switch state 
             when "STOPPED"
               $("#controller").addClass("stopped")
@@ -65,11 +64,22 @@ class window.Compressable
                 action: "emergency_stop"
               @setpoint = 0
               @next_setpoint = -1
+            when "PID"
+              @pre_stop_sp = @_setpoint
+              @setpoint = 0
+              @next_setpoint = -1
+              @send "pid", 
+                action: "pid_stop"
+              $('[action="pid_toggle"]').html("RESTART PID")
             when "ON"
               $("#controller").removeClass("stopped")
+              $('[action="pid_toggle"]').html("HOLD")
               @setpoint = @pre_stop_sp 
               @send "pid", 
                 action: "restart"
+              @send "pid", 
+                action: "pid_start"
+
           $('.status').html(@_status)
       upper_limit: 
         get: -> parseInt(@_upper_limit)

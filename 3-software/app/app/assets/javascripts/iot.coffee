@@ -132,7 +132,8 @@ window.start_socket = (host, port)->
     $("button.api").addClass('green').removeClass("disabled")
     $(".panel.disabled").removeClass("disabled")
     $("button.connect").addClass('disabled').removeClass("blue loading")
-    $("#server-control").hide()
+    # $("#server-control").hide()
+    $(".mobile").addClass("connected")
     message = 
         name: window.NAME
         version: window.VERSION
@@ -140,10 +141,11 @@ window.start_socket = (host, port)->
     socket.send JSON.stringify(message)
 
   socket.onclose = (event)->
-    $("#server-control").show()
+    # $("#server-control").show()
     $("#control-panel").addClass('red').removeClass('green')
     $("button.api").addClass('disabled').removeClass("green")
     $("button.connect").removeClass('disabled').addClass("blue")
+    $(".mobile").removeClass("connected")
     # ATTEMPT RECONNECTION EVERY 5000 ms
     _.delay (()-> start_socket(host, port)), 5000
 
@@ -154,11 +156,12 @@ window.start_socket = (host, port)->
       $(document).trigger(stream.event, stream)
       $(document).trigger("event", stream)
     else if stream.api
-      console.log "api", stream.api
+      # console.log "api", stream.api
       $(document).trigger(stream.api.command, stream.api)
     else
       console.log("Client << ", event.data)
-      editor.session.insert({row: 1, col:0}, "\nClient << "+ JSON.stringify(stream)+"")
+      if editor
+        editor.session.insert({row: 1, col:0}, "\nClient << "+ JSON.stringify(stream)+"")
 
   socket.onerror = (event)->
     console.log("Client << ", event)
@@ -172,7 +175,8 @@ window.start_socket = (host, port)->
     if this.readyState == this.OPEN
       this.send JSON.stringify message
       console.log("Client >>", message)
-      editor.session.insert({row: 1, col:0}, "\nClient >> "+ JSON.stringify(message)+"")
+      if editor
+        editor.session.insert({row: 1, col:0}, "\nClient >> "+ JSON.stringify(message)+"")
     else
       alertify.error("Lost connection to server (State="+this.readyState+"). Refresh?")
 
