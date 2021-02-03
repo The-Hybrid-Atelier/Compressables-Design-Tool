@@ -32,8 +32,8 @@
     # Limit Settings
     $('[action="set_ul"]').on "swiperight", (event)-> window.cb.upper_limit = 100; 
     $('[action="set_ll"]').on "swiperight", (event)-> window.cb.lower_limit = -100; 
-    $('[action="set_ul"]').click ()-> window.cb.upper_limit = window.cb.setpoint; 
-    $('[action="set_ll"]').click ()-> window.cb.lower_limit = window.cb.setpoint; 
+    $('[action="set_ul"]').on "taphold", (event)-> window.cb.upper_limit = window.cb.setpoint; 
+    $('[action="set_ll"]').on "taphold", (event)-> window.cb.lower_limit = window.cb.setpoint; 
     $('[action="hand-toggle"]').click ()-> window.gc.layout = if window.gc.layout == "right-handed" then "left-handed" else "right-handed"; 
     $('[action="input-toggle"]').click ()-> window.gc.input = if window.gc.input == "instantaneous" then "temporal" else "instantaneous"; 
     $('[action="save"]').click ()-> gc.load($(this).attr("save_id"));
