@@ -21,10 +21,17 @@ class window.GestureCanvas
     if commands.length == 0
       return 0
     else
+      starting_sp = cb.setpoint
+      commands = commands[0]
       if @_input == "instantaneous"
-        return [[0, commands[0].setpoint]]
+        return [[0, commands.setpoint]]
       else if @_input == "temporal"
-        return _.zip(commands[0].t, commands[0].setpoints)
+        commands.t.push(commands.t[commands.t.length - 1] + 250)
+        commands.setpoints.push(starting_sp)
+        commands.t.unshift(-250)
+        commands.setpoints.unshift(starting_sp)
+        commands.t = _.map commands.t, (t)-> return t + 250 
+        return _.zip(commands.t, commands.setpoints)
 
   setup: (ops)->
     scope = this
@@ -93,9 +100,10 @@ class window.GestureCanvas
           strokeWidth: 2
           to: (t)->
             t = t / 1000 / GestureCanvas.GESTURE_TIME
-            pt = scope.mid.getPointAt(t * scope.mid.length)
-            this.position.x = pt.x
-            paper.view.update()
+            if t * scope.mid.length <= scope.mid.length
+            	pt = scope.mid.getPointAt(t * scope.mid.length)
+            	this.position.x = pt.x
+            	paper.view.update()
           addPoint: (l)->
             p = cb.to_p(cb.pressure)
             p = if p > 1 then 1 else p
