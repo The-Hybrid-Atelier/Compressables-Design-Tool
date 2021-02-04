@@ -3,7 +3,7 @@ class window.GestureCanvas
   @FONT: "Arial"
   @SCALE: 0.05 * 4
   @LIMITS_OFFSET: 40
-  @GESTURE_TIME: 10
+  @GESTURE_TIME: 5
   constructor: (ops)->
     console.log "✓ Paperjs Functionality"
     this.name = "gesture"

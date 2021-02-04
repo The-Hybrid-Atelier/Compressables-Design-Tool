@@ -16,6 +16,7 @@
     window.cb = new Compressable(window.socket)
     window.gc = new GestureCanvas
       canvas: $("canvas")
+    window.stop_command = null
     # Enable Touch Interactions
     $(document).on "contextmenu", (event)-> event.preventDefault(); return false;
     # Emergency Stop and Restart
@@ -50,6 +51,10 @@
         clearTimeout(id)
         window.activeCommands = []
 
+      # Baseline power reset
+      if window.stop_command
+        console.log("RESET POWER", window.stop_command)
+        window.stop_command()
       # Reset visuals
       scrubber = paper.project.getItem
         name: "scrubber"
@@ -61,15 +66,22 @@
       scrubber = paper.project.getItem
         name: "scrubber"
       if not scrubber then return
-      _.each commands, (c)->
+      _.each commands, (c, i)->
         timeout_id = _.delay (()-> 
           scrubber.to(c[0]); 
           window.cb.setpoint = c[1]
         ), c[0]
+        if i == commands.length-1
+          window.stop_command = ()-> window.cb.setpoint = c[1]
 
         window.activeCommands.push(timeout_id)
       
     # Live pressure readings
+    $(document).on "gesture", (event, msg)-> 
+      console.log "setting gesture settings"
+      if msg["period"]
+        GestureCanvas.GESTURE_TIME = msg["period"]
+        console.log("\tSetting GESTURE_TIME:", msg["period"])
     $(document).on "behavior", (event, msg)-> 
       console.log "Calling behavior", msg["index"].toLowerCase()
       if msg["index"]

@@ -153,7 +153,7 @@ window.start_socket = (host, port)->
   socket.onmessage = (event)->
     stream = JSON.parse(event.data)
     if stream.event
-      console.log "event", stream.event
+      # console.log "event", stream.event
       $(document).trigger(stream.event, stream)
       $(document).trigger("event", stream)
     else if stream.api
