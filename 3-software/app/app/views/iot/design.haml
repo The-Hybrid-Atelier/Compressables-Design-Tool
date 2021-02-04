@@ -73,7 +73,7 @@
     $(document).on "behavior", (event, msg)-> 
       console.log "Calling behavior", msg["index"].toLowerCase()
       if msg["index"]
-        if msg["index"] == -1
+        if msg["index"] == "stop"
           $('#stop').click()
         else
           gc.load(msg["index"].toLowerCase())
