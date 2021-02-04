@@ -24,8 +24,10 @@ class window.GestureCanvas
       starting_sp = cb.setpoint
       commands = commands[0]
       if @_input == "instantaneous"
+        
         return [[0, commands.setpoint]]
       else if @_input == "temporal"
+
         commands.t.push(commands.t[commands.t.length - 1] + 250)
         commands.setpoints.push(starting_sp)
         commands.t.unshift(-250)
@@ -301,10 +303,12 @@ class window.GestureCanvas
         $('#input').attr("mode", value)
         switch @_input
           when "temporal"
+            $("#stop").show()
             paper.tool = @temporal
             paper.tool.init()
             $('[action="input-toggle"]').html("SWITCH TO INSTANTANEOUS MODE")
           when "instantaneous"
+            $("#stop").hide()
             paper.tool = @instantaneous
             paper.tool.init()
             $('[action="input-toggle"]').html("SWITCH TO TEMPORAL MODE")
