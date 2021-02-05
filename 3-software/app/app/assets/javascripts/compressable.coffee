@@ -8,6 +8,7 @@ class window.Compressable
     @_setpoint = 132
     @_next_setpoint = -1
     @_pressure = 0
+    @_ss = 40
     @socket = socket
 
   send: (event, parameters)->
@@ -15,6 +16,7 @@ class window.Compressable
     if event
       msg.event = event
     msg = _.extend msg, parameters
+    # console.log(">>", msg)
     if window.socket
       window.socket.jsend msg
   to_p: (pressure)->
@@ -25,6 +27,13 @@ class window.Compressable
     return @lower_limit + (p * range)
 
   Object.defineProperties @prototype, 
+    ss:
+      get: -> @_ss
+      set: (value)->
+        @_ss = value
+        display = value.toFixed(0)
+        $('[action="set_ss"] .badge').html(display)
+
     name:
       get: -> @_name
       set: (value)-> 
@@ -34,6 +43,7 @@ class window.Compressable
     setpoint:
       get: -> @_setpoint
       set: (value)->
+        if @_setpoint == parseInt(value) then return
         @_setpoint = parseInt(value)
         if @_setpoint > @_upper_limit
           @_setpoint = @_upper_limit
@@ -54,7 +64,7 @@ class window.Compressable
       get: -> @_status
       set: (state)->
         if @_status == state then return
-        @_status = state
+        
       
         switch state 
           when "STOPPED"
@@ -64,14 +74,18 @@ class window.Compressable
               action: "emergency_stop"
             @setpoint = 0
             @next_setpoint = -1
+            @_status = state
           when "PID"
+            @_status = state
             @pre_stop_sp = @_setpoint
             @setpoint = 0
             @next_setpoint = -1
             @send "pid", 
               action: "pid_stop"
             $('[action="pid_toggle"]').html("RESTART PID")
+
           when "ON"
+            @_status = state
             $("#controller").removeClass("stopped")
             $('[action="pid_toggle"]').html("HOLD")
             @setpoint = @pre_stop_sp 
@@ -117,7 +131,9 @@ class window.Compressable
         if @_next_setpoint != 0
           prefix = if parseInt(@_next_setpoint) > 0 then "+ " else ""
           display = "(" + prefix + @_next_setpoint.toFixed(0) + ")"
+          display = if @_next_setpoint > 0 then "+" else "-"
           $('.next_setpoint').html(display)
+
         else
           if @_status == "STOPPED"
             $('.next_setpoint').html("-")
@@ -126,8 +142,8 @@ class window.Compressable
               $('.next_setpoint').html("MIN")
             else if maxed
               $('.next_setpoint').html("MAX")
-            else
-               $('.next_setpoint').html("-")
+            # else
+               # $('.next_setpoint').html("-")
           
             
 

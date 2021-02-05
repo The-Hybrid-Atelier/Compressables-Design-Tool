@@ -36,6 +36,9 @@
     $('[action="set_ll"]').on "swiperight", (event)-> window.cb.lower_limit = -100; 
     $('[action="set_ul"]').on "taphold", (event)-> window.cb.upper_limit = window.cb.setpoint; 
     $('[action="set_ll"]').on "taphold", (event)-> window.cb.lower_limit = window.cb.setpoint; 
+    $('[action="set_ss"]').on "swiperight", (event)-> window.cb.ss = 50; 
+    $('[action="set_ss"]').on "taphold", (event)-> window.cb.ss = window.cb.setpoint; 
+    $('[action="set_ss"]').on "tap", (event)-> window.cb.setpoint = window.cb.ss 
     $('[action="hand-toggle"]').click ()-> window.gc.layout = if window.gc.layout == "right-handed" then "left-handed" else "right-handed"; 
     $('[action="input-toggle"]').click ()-> window.gc.input = if window.gc.input == "instantaneous" then "temporal" else "instantaneous"; 
     $('[action="save"]').click ()-> gc.load($(this).attr("save_id"));
@@ -53,8 +56,11 @@
 
       # Baseline power reset
       if window.stop_command
-        console.log("RESET POWER", window.stop_command)
+        console.log("RESET POWER")
         window.stop_command()
+
+      $('#send').removeClass('disabled')
+
       # Reset visuals
       scrubber = paper.project.getItem
         name: "scrubber"
@@ -62,6 +68,8 @@
       scrubber.to(0)
 
     $('#send').click ()-> 
+      if $(this).hasClass('disabled') then return
+      $('#send').addClass('disabled')
       commands = gc.command()
       scrubber = paper.project.getItem
         name: "scrubber"
@@ -70,10 +78,14 @@
         timeout_id = _.delay (()-> 
           scrubber.to(c[0]); 
           window.cb.setpoint = c[1]
+          if i == commands.length - 1
+            $('#send').removeClass('disabled')
         ), c[0]
         if i == commands.length-1
-          window.stop_command = ()-> window.cb.setpoint = c[1]
-
+          window.stop_command = ()-> 
+            window.cb.setpoint = c[1]
+            $('#send').removeClass('disabled')
+          
         window.activeCommands.push(timeout_id)
       
     # Live pressure readings
@@ -82,6 +94,8 @@
       if msg["period"]
         GestureCanvas.GESTURE_TIME = msg["period"]
         console.log("\tSetting GESTURE_TIME:", msg["period"])
+      if msg["increment"]
+        GestureCanvas.GESTURE_TIME_INCREMENT = msg["increment"]
     $(document).on "behavior", (event, msg)-> 
       console.log "Calling behavior", msg["index"].toLowerCase()
       if msg["index"]
@@ -106,11 +120,12 @@
     cb.next_setpoint = 1
     cb.pressure = 123
     gc.input = "instantaneous"
+    gc.ss = 40
 
         
 / IoT Websocket
 
-.ui.container.mobile.f
+.ui.container.mobile.f.connected
   #server-control.ccfs.f
     .ui.segment.attached
       %form.ui.form.server-control.tiny.equal.width
@@ -148,9 +163,9 @@
         %label.temporal Draw a 5 second wave.
         %canvas
         #controls.cc
-          #send.icon.cc
+          #send.icon.cc.button
             %i.icon.send
-          #stop.icon.cc
+          #stop.icon.cc.button
             %i.icon.stop
       .state.cc
         .reading.cc.blue
@@ -167,6 +182,9 @@
       .ui.button.badged.massive.yellow.fluid{action: "set_ll"}
         SET LOWER LIMIT
         %span.badge 120
+      .ui.button.badged.massive.orange.fluid{action: "set_ss"}
+        STEADY STATE
+        %span.badge 40
       .ui.button.massive.red.fluid{action: "emergency_stop"}
         EMERGENCY STOP
       .ui.button.massive.red.fluid{action: "restart"}
@@ -186,6 +204,9 @@
     display: none;
   }
 
+  [mode="instantaneous"] #send{
+    display: none;
+  }
   .sublabel{
     font-size: 0.5em;
     font-weight: normal;
@@ -328,7 +349,8 @@
   }
 
   /* Disable buttons when stopped */
-  .stopped .button:not([action="restart"]){
+
+  .stopped .button:not([action="restart"]), .button.disabled{
     background: #999 !important;
     color: #DDD !important;
     -webkit-tap-highlight-color: transparent;

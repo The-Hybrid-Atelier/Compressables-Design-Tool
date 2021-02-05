@@ -4,6 +4,7 @@ class window.GestureCanvas
   @SCALE: 0.05 * 4
   @LIMITS_OFFSET: 40
   @GESTURE_TIME: 5
+  @GESTURE_TIME_INCREMENT: 0.5
   constructor: (ops)->
     console.log "✓ Paperjs Functionality"
     this.name = "gesture"
@@ -58,7 +59,7 @@ class window.GestureCanvas
         paper.project.clear()
         
 
-        @time_lines = _.range(0, GestureCanvas.GESTURE_TIME+0.25, 0.25) #250 ms increments
+        @time_lines = _.range(0, GestureCanvas.GESTURE_TIME+GestureCanvas.GESTURE_TIME_INCREMENT, GestureCanvas.GESTURE_TIME_INCREMENT) #250 ms increments
         @time_lines = _.map @time_lines, (t, i)->
           p = t / GestureCanvas.GESTURE_TIME
           top = paper.view.bounds.topLeft.add(new paper.Point(GestureCanvas.LIMITS_OFFSET, 0))
@@ -88,12 +89,42 @@ class window.GestureCanvas
           strokeColor: "green"
           strokeWidth: 1
           dashArray: [1,1]
+
         @lower = new paper.Path.Line
           name: 'lower'
           from: paper.view.bounds.bottomLeft.add(new paper.Point(0, -GestureCanvas.LIMITS_OFFSET))
           to: paper.view.bounds.bottomRight.add(new paper.Point(0, -GestureCanvas.LIMITS_OFFSET))
           strokeColor: "green"
           strokeWidth: 1
+        @posbg = new paper.Path.Rectangle
+          from: @upper.bounds.topLeft.clone()
+          to: @mid.bounds.bottomRight.clone().add(new paper.Point(GestureCanvas.LIMITS_OFFSET, 0))
+          fillColor: "blue"
+          opacity: 0.05
+        @blow_label = new paper.PointText
+          font: "Arial"
+          fontSize: 50
+          fillColor: "blue"
+          content: 'BLOW'
+          fontWeight: 'bold'
+          justifiaction: 'center'
+          opacity: 0.1
+        @blow_label.set
+          position: @posbg.bounds.center
+        @negbg = new paper.Path.Rectangle
+          from: @mid.bounds.topLeft.clone().add(new paper.Point(-GestureCanvas.LIMITS_OFFSET, 0))
+          to: @lower.bounds.bottomRight.clone()
+        @suck_label = new paper.PointText
+          font: "Arial"
+          fontSize: 50
+          fillColor: "black"
+          content: 'SUCK'
+          fontWeight: 'bold'
+          justifiaction: 'center'
+          opacity: 0.05
+        @suck_label.set
+          position: @negbg.bounds.center
+
         @scrubber = @time_lines[0].clone()
         
         @scrubber.set
@@ -208,6 +239,7 @@ class window.GestureCanvas
 
     @instantaneous = new paper.Tool
       name: "instantaneous"
+      minDistance: 5
       init: ()->
         console.log "instantaneous"
         paper.project.clear()
@@ -215,6 +247,7 @@ class window.GestureCanvas
         
       onMouseDown: (event)->
         paper.project.clear()
+
         @scrubber = new paper.Path.Line
           name: "scrubber"
         @scrubber.to = (t)->
@@ -256,9 +289,9 @@ class window.GestureCanvas
           distance = direction * distance
           cb.next_setpoint = distance
           @path.setpoint = cb.next_setpoint + cb.setpoint
-          $('#send').addClass("enabled")
-        else
-          $('#send').addClass("disabled")
+
+        $("#send").click()
+
     paper.view.update()
   save: (loc, value)-> 
     value = paper.project.getItem({name: "command"})
@@ -276,6 +309,8 @@ class window.GestureCanvas
   clear: ->
     paper.project.clear()
     paper.view.update()
+    
+
   Object.defineProperties @prototype, 
     
     layout:
@@ -303,6 +338,7 @@ class window.GestureCanvas
         $('#input').attr("mode", value)
         switch @_input
           when "temporal"
+            cb.ss = cb.setpoint
             $("#stop").show()
             paper.tool = @temporal
             paper.tool.init()
