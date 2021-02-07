@@ -141,20 +141,20 @@
             %label &nbsp;
             %button.connect.blue.ui.button.small.fluid{type:"submit"}
               CONNECT
-  .ui#controller.left-handed.cc.f
+  .ui#controller.left-handed.cce.f
     .settings.ccfe
-      .ui.crc
+      .ui.cre.fw
         - if true
           .ui.button.black.fluid.massive{action: "save", save_id: 'a'} A
           .ui.button.black.fluid.massive{action: "save", save_id: 'b'} B
           .ui.button.black.fluid.massive{action: "save", save_id: 'c'} C
           .ui.button.black.fluid.massive{action: "save", save_id: 'd'} D
-          .ui.button.black.fluid.massive{action: "save", save_id: 'e'} E
+          / .ui.button.black.fluid.massive{action: "save", save_id: 'e'} E
       -if false
         .ui.button.fluid.large.purple{action: "pid_toggle"} HOLD
       .ui.button.fluid.large.purple{action: "hand-toggle"} CHANGE TO RIGHT-HAND
       .ui.button.fluid.large.blue{action: "input-toggle"} CHANGE TO TIME INPUT MODE
-      .ui.button.badged.massive.yellow{action: "set_ul"}
+      .ui.button.badged.large.yellow{action: "set_ul"}
         SET UPPER LIMIT
         %span.badge 134
     .ui.segment#input.crc{mode: "temporal"}
@@ -179,10 +179,10 @@
           %label.sublabel PRESSURE
           %label.process_value 124
     .settings.ccfs
-      .ui.button.badged.massive.yellow.fluid{action: "set_ll"}
+      .ui.button.badged.large.yellow.fluid{action: "set_ll"}
         SET LOWER LIMIT
         %span.badge 120
-      .ui.button.badged.massive.orange.fluid{action: "set_ss"}
+      .ui.button.badged.large.orange.fluid{action: "set_ss"}
         STEADY STATE
         %span.badge 40
       .ui.button.massive.red.fluid{action: "emergency_stop"}
