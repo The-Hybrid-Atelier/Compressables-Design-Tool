@@ -11,7 +11,6 @@ class JSONWebSocketClient:
     self.on_register = {}
     self.name = name
 
-
   def connect(self):
     self.ws = create_connection(self.uri)
     print("Listening on %s"% (self.uri))
@@ -64,5 +63,6 @@ class JSONWebSocketClient:
     if "debug" in msg:
       if msg["debug"]:
         print("Sending >> ", msg)
+        
   def on(self, sender_name, action, callback):
     self.on_register[sender_name + action] = (action, callback)

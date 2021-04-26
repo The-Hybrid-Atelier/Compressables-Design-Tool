@@ -1,4 +1,12 @@
-from simple_api import *
+# Squeeze recognizer
+# Listens to air pressure values sent to the
+# websocket server by the programmable air. 
+# Compares a sobel-filtered window against a moving baseline
+# to determine squeeze events. 
+# Emit squeeze events to the websocket server. 
+
+
+from haws import *
 import atexit, string, numpy, math, pprint, time
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -11,7 +19,7 @@ DEVICE_NAME= "programmable-air"
 # GLOBALS
 
 servers = {
-  "cloud": "ws://162.243.120.86:3001"
+  "cloud": "ws://162.243.120.86:3001" # YOUR WEBSOCKET ADDRESS HERE
 }
 
 compressables = {
@@ -46,7 +54,8 @@ def startup(callback):
   jws.send(AIR["BLOW"])
   time.sleep(3)
   jws.send({"api":{"command":"PUMP_ON","params":{"pumpNumber":2, "PWM": 40}}})
-  callback()
+  while True:
+    callback()
 
 
 # CLASSIFY

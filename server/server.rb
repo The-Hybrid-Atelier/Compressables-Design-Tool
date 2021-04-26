@@ -80,7 +80,7 @@ EventMachine.run do
           if msg["event"] == "greeting"
             ws.name = msg["name"]
           end
-          #if msg["event"] == "server-state"
+
           if msg.key?("api") and msg["api"]["command"] == "SERVER_STATE"
             msg = {}
             msg["data"] = websockets.map { |sid, ms| ms.name}
@@ -111,8 +111,6 @@ EventMachine.run do
     end
   end
 
-  # ip = Socket::getaddrinfo(Socket.gethostname,"echo",Socket::AF_INET)[0][3]
-  ip = "192.168.1.4"
-  puts "Server: Started at ws://#{options[:b]}:#{options[:p]} --> #{ip}"
+  puts "Server: Started at ws://#{options[:b]}:#{options[:p]}"
   print "#{websockets.length} Devices Connected\n"
 end
